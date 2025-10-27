@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text Simple</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+        
+        button {
+            padding: 20px 40px;
+            font-size: 20px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #10b981;
+            color: white;
+            margin: 10px;
+        }
+        
+        button:hover {
+            background: #059669;
+        }
+        
+        button:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            min-height: 100px;
+            text-align: left;
+        }
+        
+        .status {
+            margin: 20px 0;
+            font-size: 18px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Speech-to-Text</h1>
+        
+        <div class="status" id="status">Prêt</div>
+        
+        <button id="startBtn" onclick="start()">▶️ Démarrer</button>
+        <button id="stopBtn" onclick="stop()" disabled>⏹️ Arrêter</button>
+        
+        <div class="result" id="result">Parler après avoir cliqué sur Démarrer...</div>
+    </div>
+
+    <script>
+        let recognition = null;
+        let isListening = false;
+
+        // Initialiser la reconnaissance vocale
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                document.getElementById('status').textContent = '🎤 Écoute active...';
+                console.log('Started');
+            };
+
+            recognition.onresult = (event) => {
+                let text = '';
+                for (let i = 0; i < event.results.length; i++) {
+                    text += event.results[i][0].transcript;
+                }
+                document.getElementById('result').textContent = text;
+            };
+
+            recognition.onerror = (event) => {
+                console.error(event.error);
+                if (event.error === 'not-allowed') {
+                    alert('Microphone bloqué. Autorise l\'accès dans Chrome.');
+                }
+                stop();
+            };
+
+            recognition.onend = () => {
+                if (isListening) {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.log(e);
+                        setTimeout(() => recognition.start(), 100);
+                    }
+                }
+            };
+        } else {
+            alert('Navigateur non supporté. Utilise Chrome ou Safari.');
+        }
+
+        function start() {
+            if (!recognition) return;
+            isListening = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            recognition.start();
+        }
+
+        function stop() {
+            isListening = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('status').textContent = 'Arrêté';
+            if (recognition) recognition.stop();
+        }
+    </script>
+</body>
+</html>
